@@ -22,8 +22,8 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 			case a := <-sc:
 				if a == syscall.SIGHUP {
 					go func() {
-						defer reloadingMutex.Unlock()
 						reloadingMutex.Lock()
+						defer reloadingMutex.Unlock()
 						if isRunning {
 							reload()
 						}
