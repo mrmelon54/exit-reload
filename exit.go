@@ -5,9 +5,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
+
+var reloadingMutex = &sync.Mutex{}
 
 func ExitReload(prefix string, reload func(), breakdown func()) {
 	done := make(chan struct{}, 1)
@@ -18,7 +21,11 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 			select {
 			case a := <-sc:
 				if a == syscall.SIGHUP {
-					go reload()
+					go func() {
+						defer reloadingMutex.Unlock()
+						reloadingMutex.Lock()
+						reload()
+					}()
 				} else {
 					close(done)
 					return
@@ -30,6 +37,8 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 	// Wait for exit signal
 	signal.Notify(sc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-done
+	reloadingMutex.Lock()
+	defer reloadingMutex.Unlock()
 	fmt.Println()
 
 	// Stop server
