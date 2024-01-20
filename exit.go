@@ -10,11 +10,11 @@ import (
 	"time"
 )
 
-var reloadingMutex = &sync.Mutex{}
-
 func ExitReload(prefix string, reload func(), breakdown func()) {
 	done := make(chan struct{}, 1)
 	sc := make(chan os.Signal, 1)
+	reloadingMutex := &sync.Mutex{}
+	isRunning := true
 
 	go func() {
 		for {
@@ -24,7 +24,9 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 					go func() {
 						defer reloadingMutex.Unlock()
 						reloadingMutex.Lock()
-						reload()
+						if isRunning {
+							reload()
+						}
 					}()
 				} else {
 					close(done)
@@ -37,6 +39,7 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 	// Wait for exit signal
 	signal.Notify(sc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-done
+	isRunning = false
 	reloadingMutex.Lock()
 	defer reloadingMutex.Unlock()
 	fmt.Println()
