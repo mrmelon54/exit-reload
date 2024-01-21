@@ -49,9 +49,9 @@ func ExitReload(prefix string, reload func(), breakdown func()) {
 	// Wait for exit signal
 	signal.Notify(sc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-done
-	isRunning = false
 	reloadingMutex.Lock()
 	defer reloadingMutex.Unlock()
+	isRunning = false
 	fmt.Println()
 
 	// Stop server
