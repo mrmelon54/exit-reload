@@ -1,4 +1,4 @@
-module github.com/MrMelon54/exit-reload
+module github.com/mrmelon54/exit-reload
 
 go 1.20
 
